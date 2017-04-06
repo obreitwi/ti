@@ -31,6 +31,7 @@ from __future__ import unicode_literals
 
 import functools as ft
 import json
+import io
 import os
 import re
 import subprocess
@@ -289,11 +290,13 @@ def action_edit():
 
     data = store.load()
     yml = yaml.safe_dump(data, default_flow_style=False, allow_unicode=True)
+    yml = yml.decode("utf-8").replace('\n- ', '\n\n- ')
 
     cmd = os.getenv('EDITOR')
-    fd, temp_path = tempfile.mkstemp(prefix='ti.')
-    with open(temp_path, "r+") as f:
-        f.write(yml.replace('\n- ', '\n\n- '))
+    fd, temp_path = tempfile.mkstemp(prefix='ti.', suffix=".yaml")
+    with io.open(temp_path, "r+", encoding="utf-8") as f:
+        #  f.write("#encoding: utf-8\n")
+        f.write(yml)
         f.seek(0)
         subprocess.check_call(cmd + ' ' + temp_path, shell=True)
         yml = f.read()
@@ -390,6 +393,8 @@ def timegap(start_time, end_time):
 
 def parse_args(argv=sys.argv):
     global use_color
+
+    argv = map(lambda a: a.decode("utf-8"), argv)
 
     if '--no-color' in argv:
         use_color = False
